@@ -1,0 +1,6 @@
+ICS_603_Final_Project/backend/.env
+*.pyc
+/ICS_603_Final_Project/backend/chroma_db
+ICS_603_Final_Project/front-end/.sesskey
+ICS_603_Final_Project/backend/testing_the_classifier.ipynb
+ICS_603_Final_Project/backend/notes.txt
