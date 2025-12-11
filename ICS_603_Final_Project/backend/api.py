@@ -74,6 +74,7 @@ class TopicOutput(BaseModel):
 
 class SearchInput(BaseModel):
     query: str
+    user_id: Optional[int] = None
     
 class RecommendationInput(BaseModel):
     user_id: int
@@ -149,7 +150,10 @@ async def create_reflection(reflection: CreateReflectionInput):
         collection.add(
             ids=[str(db_reflection.id)],
             embeddings=[embedding],
-            metadatas=[{"title": reflection.title}]
+            metadatas=[{
+                "title": reflection.title,
+                "user_id": reflection.user_id 
+            }]
         )
         return CreateReflectionOutput(reflection_id=db_reflection.id)
     finally:
@@ -220,10 +224,15 @@ async def search_reflections(data: SearchInput):
     print("Collection count:", collection.count())
     query_embedding = await embed_text(data.query)
 
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=5
-    )
+    query_params = {
+        "query_embeddings": [query_embedding],
+        "n_results": 10
+    }
+    
+    if data.user_id is not None:
+        query_params["where"] = {"user_id": data.user_id}
+    
+    results = collection.query(**query_params)
     
     print("Results:", results)
     print("Distances:", results["distances"][0])
@@ -264,32 +273,28 @@ async def get_recommendation(data: RecommendationInput):
     query_embedding = await embed_text(data.context)
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=10
+        n_results=10,
+        where={"user_id": data.user_id} 
     )
+    print("Recommendation search results:", results) 
+    print("Distances:", results["distances"][0])
     
-    # Get IDs from search results
-    ids = [int(id) for id in results["ids"][0]]
+    # Filter by distance threshold and get IDs
+    ids = [
+        int(id) for id, distance in zip(results["ids"][0], results["distances"][0])
+        if distance < 1.35
+    ]
     
-    # Get reflections from database, filtered by user_id and distance
+    if not ids:
+        return RecommendationOutput(
+            recommendation="I don't have enough information from your reflections to make a personalized recommendation. Try adding more reflections first.",
+            reflections_used=[]
+        )
+    
+    # Get reflections from database
     db = SessionLocal()
     try:
-        reflections = db.query(Reflection).filter(
-            Reflection.id.in_(ids),
-            Reflection.user_id == data.user_id
-        ).all()
-        
-        # Filter by distance threshold after getting reflections
-        id_to_distance = dict(zip(
-            [int(id) for id in results["ids"][0]], 
-            results["distances"][0]
-        ))
-        reflections = [r for r in reflections if id_to_distance[r.id] < 1.35]
-        
-        if not reflections:
-            return RecommendationOutput(
-                recommendation="I don't have enough information from your reflections to make a personalized recommendation. Try adding more reflections first!",
-                reflections_used=[]
-            )
+        reflections = db.query(Reflection).filter(Reflection.id.in_(ids)).all()
         
         # Format reflections and generate recommendation
         reflection_dicts = [

@@ -19,7 +19,6 @@ topic_classifier = Agent(
     system_prompt="Analyze personal reflections and identify 2-3 key topics to describe the following reflections",
 )
 
-
 async def classify_reflection_topics(
     title: str, text: str, existing_topics: List[str]
 ) -> TopicList:

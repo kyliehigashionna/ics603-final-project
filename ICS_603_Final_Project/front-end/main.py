@@ -1,9 +1,8 @@
 from fasthtml.common import FastHTML
-import httpx
 from pages.home_page import home_page
 from pages.reflections_page import reflections_page
 from components.add_reflection import create_reflection
-
+from services.recommendation_service import get_recommendation
 app = FastHTML()
 
 @app.get("/")
@@ -24,16 +23,7 @@ async def create(title: str, text: str, user_id: int):
 @app.post("/reflections/recommend")
 async def recommend(user_id: int, context: str, prompt: str):
     # Get the recommendation result
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(
-            f"http://localhost:9000/api/recommendations",
-            json={
-                "user_id": user_id,
-                "context": context,
-                "prompt": prompt
-            }
-        )
-        result = response.json()
+    result = await get_recommendation(user_id, context, prompt)
     
     # Create the recommendation data
     recommendation_data = {
