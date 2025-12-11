@@ -25,7 +25,6 @@ collection = chroma_client.get_or_create_collection(name="reflections")
 load_dotenv()
 
 SUPABASE_DB_URL = os.getenv("SUPABASE_DB_URL")
-# os.getenv("OPENAI_API_KEY")
 
 # ============================================================================
 # Database Setup
