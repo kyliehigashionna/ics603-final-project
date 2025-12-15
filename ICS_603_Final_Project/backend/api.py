@@ -220,7 +220,6 @@ async def classify_reflection(reflection: ClassifyReflectionInput):
 @app.post("/api/reflections/search")
 async def search_reflections(data: SearchInput):
     """Search reflections based on a query"""
-    print("Collection count:", collection.count())
     query_embedding = await embed_text(data.query)
 
     query_params = {
@@ -232,10 +231,7 @@ async def search_reflections(data: SearchInput):
         query_params["where"] = {"user_id": data.user_id}
     
     results = collection.query(**query_params)
-    
-    print("Results:", results)
-    print("Distances:", results["distances"][0])
-    
+
     ids = []
     for id, distance in zip(results["ids"][0], results["distances"][0]):
         if distance < 1.35:
@@ -275,9 +271,7 @@ async def get_recommendation(data: RecommendationInput):
         n_results=10,
         where={"user_id": data.user_id} 
     )
-    print("Recommendation search results:", results) 
-    print("Distances:", results["distances"][0])
-    
+
     # Filter by distance threshold and get IDs
     ids = [
         int(id) for id, distance in zip(results["ids"][0], results["distances"][0])

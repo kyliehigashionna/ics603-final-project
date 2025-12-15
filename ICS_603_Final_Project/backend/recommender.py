@@ -37,7 +37,6 @@ async def analyze_topics(ctx: RunContext[List[Dict]]) -> Dict[str, Any]:
         }
 
     top_topic = max(counts, key=counts.get)
-    print("analyze_topics tool called! Output:", counts, top_topic)
     return {
         "counts": counts,
         "top_topic": top_topic,
